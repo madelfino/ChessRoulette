@@ -1,17 +1,49 @@
 window.onload = function() {
 
-    var messages = [];
-    var socket = io.connect('http://chesspuzzleoftheday.com:3000');
-    var field = document.getElementById("field");
-    var sendButton = document.getElementById("send");
-    var content = document.getElementById("content");
-    var name = document.getElementById("name");
+    var messages = [],
+        socket = io.connect('http://chesspuzzleoftheday.com:3000'),
+        field = document.getElementById("field"),
+        sendButton = document.getElementById("send"),
+        content = document.getElementById("content"),
+        name = document.getElementById("name"),
+        id, game_id = '-', color = '-',
+        board,
+        game = new Chess();
+
+    var onDragStart = function(source, piece, position, orientation) {
+        if (game.game_over() === true ||
+            (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
+            (game.turn() === 'b' && piece.search(/^w/) !== -1) ||
+            (piece.search(color) === -1)) {
+            return false;
+        }
+    }; //onDragStart
+
+    var onDrop = function(source, target) {
+        var move = game.move({
+            from: source,
+            to: target,
+            promotion: 'q'
+        });
+        if (move === null) {
+            return 'snapback';
+        } else {
+            socket.emit('move', { gameid: game_id, newposition: game.fen() });
+        }
+    }; //onDrop
+
+    var onSnapEnd = function() {
+        board.position(game.fen());
+    }; //onSnapEnd
+
     var cfg = {
         draggable: true,
-        position: 'start'
+        position: 'start',
+        onDragStart: onDragStart,
+        onDrop: onDrop,
+        onSnapEnd: onSnapEnd
     };
-    var board = new ChessBoard('board', cfg);
-    var id, game_id;
+    board = new ChessBoard('board', cfg);
 
     socket.on('init', function(data) {
         id = data.id;
@@ -19,8 +51,26 @@ window.onload = function() {
         name.value = 'guest' + pad(data.num, 5);
     });
 
+    socket.on('setcolor', function(data) {
+        color = data.color;
+        var orient = (color == 'b') ? 'black' : 'white';
+        board.orientation(orient);
+    });
+
+    socket.on('setposition', function(data) {
+        if (data.gameid === game_id) {
+            if (game.load(data.newposition)) {
+                board.position(game.fen());
+            }
+        }
+    });
+
+    socket.on('setgameid', function(data) {
+        game_id = data.gameid;
+    });
+
     socket.on('message', function(data) {
-        if(data.message && (data.recipient == game_id || data.recipient == id)) {
+        if(data.message && (data.gameid === game_id)) {
             messages.push(data);
             var html = '';
             for(var i=0; i<messages.length; i++) {

@@ -32,6 +32,9 @@ io.sockets.on('connection', function(client) {
     client.on('send', function(data) {
         io.sockets.emit('message', data);
     });
+    client.on('move', function(data) {
+        io.sockets.emit('setposition', data );
+    });
 });
 
 server.createGame = function(player) {
@@ -40,6 +43,9 @@ server.createGame = function(player) {
         players : [player],
         numPlayers : 1
     }
+    player.emit('setcolor', { color: 'w' });
+    player.emit('message', { message: 'You are playing as white.' });
+    player.emit('setgameid', { gameid: game.id });
     game.players[0].color = 'w';
     this.games[game.id] = game;
     this.numGames++;
@@ -63,26 +69,29 @@ server.startGame = function(game) {
 
 server.findGame = function(player) {
     console.log('Looking for game.  There are ' + this.numGames + ' total games.');
-    io.sockets.emit('message', { message: 'Looking for open game', recipient: player.userid });
+    player.emit('message', { message: 'Looking for open game' });
     if (this.numGames) {
         var joined_game = false;
         for (var gameid in this.games) {
             var game = this.games[gameid];
             if (game.numPlayers < 2) {
-                io.sockets.emit('message', { message: 'Game found!', recipient: player.userid });
+                player.emit('message', { message: 'Game found!' });
                 joined_game = true;
                 game.numPlayers++;
                 player.color = 'b';
+                player.emit('setcolor', { color: 'b' });
+                player.emit('message', { message: 'You are playing as black.' });
+                player.emit('setgameid', { gameid: game.id });
                 game.players.push(player);
                 this.startGame(game)
             }
         }
         if (!joined_game) {
-            io.sockets.emit('message', { message: 'No open games found, creating new game...', recipient: player.userid });
+            player.emit('message', { message: 'No open games found, creating new game...', recipient: player.userid });
             this.createGame(player);
         }
     } else {
-        io.sockets.emit('message', { message: 'No games found, creating new game...', recipient: player.userid });
+        player.emit('message', { message: 'No games found, creating new game...', recipient: player.userid });
         this.createGame(player);
     }
 }; //findGame
