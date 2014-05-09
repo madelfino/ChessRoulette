@@ -1,0 +1,22 @@
+doctype html
+html(lang="en")
+    head
+        title= "Chess Roulette"
+        script(src='http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js')
+        script(src='/chessboard-0.3.0.min.js')
+        script(src='/client.js')
+        script(src='/socket.io/socket.io.js')
+        link(rel='stylesheet', href='/css/chessboard-0.3.0.min.css')
+    body
+        #playarea(style='width: 400px; margin-left: auto; margin-right: auto; font-family: sans-serif;')
+            h1(style='text-align: center') Chess Roulette
+            #board(style='width: 400px;')
+            br
+            br
+            #content(style='width: 400px; height: 100px; margin: 0 0 20px 0; border: solid 1px #999; overflow-y: scroll;')
+            .controls
+                | Name&nbsp;
+                input#name(value='guest')
+                br
+                input#field(style='width: 300px;')
+                input#send(type='button', value='send')

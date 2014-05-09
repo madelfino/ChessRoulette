@@ -1,0 +1,13 @@
+{
+    "name": "chess-roulette",
+    "author": "Michael Delfino",
+    "version": "0.0.0",
+    "description": "Play chess with random people",
+    "dependencies":
+    {
+        "socket.io": "latest",
+        "express": "latest",
+        "jade": "latest",
+        "node-uuid": "latest"
+    }
+}
