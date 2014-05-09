@@ -6,12 +6,15 @@ window.onload = function() {
         sendButton = document.getElementById("send"),
         content = document.getElementById("content"),
         name = document.getElementById("name"),
-        id, game_id = '-', color = '-',
+        id,
+        game_id = '-',
+        color = '-',
         board,
+        started = false,
         game = new Chess();
 
     var onDragStart = function(source, piece, position, orientation) {
-        if (game.game_over() === true ||
+        if (game.game_over() === true || !started ||
             (game.turn() === 'w' && piece.search(/^b/) !== -1) ||
             (game.turn() === 'b' && piece.search(/^w/) !== -1) ||
             (piece.search(color) === -1)) {
@@ -67,6 +70,12 @@ window.onload = function() {
 
     socket.on('setgameid', function(data) {
         game_id = data.gameid;
+    });
+
+    socket.on('startGame', function(data) {
+        if (data.id === game_id) {
+            started = true;
+        }
     });
 
     socket.on('message', function(data) {

@@ -45,6 +45,7 @@ server.createGame = function(player) {
     }
     player.emit('setcolor', { color: 'w' });
     player.emit('message', { message: 'You are playing as white.' });
+    player.emit('message', { message: 'Waiting on opponent...' });
     player.emit('setgameid', { gameid: game.id });
     game.players[0].color = 'w';
     this.games[game.id] = game;
@@ -64,7 +65,6 @@ server.endGame = function(gameid, playerid) {
 
 server.startGame = function(game) {
     io.sockets.emit('startGame', { id: game.id });
-    game.active = true;
 }
 
 server.findGame = function(player) {
