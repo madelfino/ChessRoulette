@@ -35,6 +35,9 @@ io.sockets.on('connection', function(client) {
     client.on('move', function(data) {
         io.sockets.emit('setposition', data );
     });
+    client.on('newgame', function() {
+        server.findGame(client);
+    });
 });
 
 server.createGame = function(player) {
@@ -43,6 +46,7 @@ server.createGame = function(player) {
         players : [player],
         numPlayers : 1
     }
+    player.game = game;
     player.emit('setcolor', { color: 'w' });
     player.emit('message', { message: 'You are playing as white.' });
     player.emit('message', { message: 'Waiting on opponent...' });
@@ -55,7 +59,9 @@ server.createGame = function(player) {
 server.endGame = function(gameid, playerid) {
     var game = this.games[gameid];
     if (game) {
-        io.sockets.emit('endGame', { id: gameid });
+        io.sockets.emit('message', { message: 'Opponent disconnected.', gameid: gameid });
+        io.sockets.emit('message', { message: 'Waiting for new opponent.', gameid: gameid });
+        io.sockets.emit('endGame', { id: gameid });http://chesspuzzleoftheday.com:3000/
         delete this.games[gameid];
         this.numGames--;
     } else {
@@ -75,23 +81,23 @@ server.findGame = function(player) {
         for (var gameid in this.games) {
             var game = this.games[gameid];
             if (game.numPlayers < 2) {
-                player.emit('message', { message: 'Game found!' });
                 joined_game = true;
                 game.numPlayers++;
-                player.color = 'b';
+                player.game = game;
                 player.emit('setcolor', { color: 'b' });
                 player.emit('message', { message: 'You are playing as black.' });
                 player.emit('setgameid', { gameid: game.id });
+                io.sockets.emit('message', { message: 'Opponent found!', gameid: game.id });
                 game.players.push(player);
                 this.startGame(game)
             }
         }
         if (!joined_game) {
-            player.emit('message', { message: 'No open games found, creating new game...', recipient: player.userid });
+            player.emit('message', { message: 'No open games found, creating new game...' });
             this.createGame(player);
         }
     } else {
-        player.emit('message', { message: 'No games found, creating new game...', recipient: player.userid });
+        player.emit('message', { message: 'No games found, creating new game...' });
         this.createGame(player);
     }
 }; //findGame

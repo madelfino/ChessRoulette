@@ -78,6 +78,15 @@ window.onload = function() {
         }
     });
 
+    socket.on('endGame', function(data) {
+        if (data.id === game_id) {
+            started = false;
+            game.reset();
+            board.position(game.fen());
+            socket.emit('newgame');
+        }
+    });
+
     socket.on('message', function(data) {
         if(data.message && (data.gameid === game_id)) {
             messages.push(data);
