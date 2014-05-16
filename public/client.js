@@ -88,11 +88,16 @@ window.onload = function() {
     });
 
     socket.on('message', function(data) {
-        if(data.message && (data.gameid === game_id)) {
+        if(data.message && (data.gameid === game_id || data.clientid === id)) {
             messages.push(data);
             var html = '';
             for(var i=0; i<messages.length; i++) {
-                html += '<b style="color: ' + (messages[i].clientid ? (messages[i].clientid == id ? 'blue' : 'red') : 'black') + ';">' + (messages[i].username ? messages[i].username : 'Server') + ': </b>';
+                html += '<b'
+                     + (messages[i].username ? ' style="color: ' : '')
+                     + ((messages[i].username && messages[i].clientid) ? (messages[i].clientid == id ? 'blue;"' : 'red;"') : '')
+                     + '>'
+                     + (messages[i].username ? messages[i].username : 'Server')
+                     + ': </b>';
                 html += messages[i].message + '<br />';
             }
             content.innerHTML = html;

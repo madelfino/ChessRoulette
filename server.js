@@ -3,7 +3,8 @@ var express = require("express"),
     app = express(),
     port = 3000,
     counter = 0,
-    server = { games : {}, numGames: 0 };
+    server = { games : {}, numGames: 0 },
+    helpMessage = 'List of commands:<br /><br />/help - Display this message<br />/newgame - Find a new opponent';
 
 app.set('views', __dirname + '/tpl');
 app.set('view engine', "jade");
@@ -22,7 +23,8 @@ io.sockets.on('connection', function(client) {
     counter++;
     client.userid = UUID();
     client.emit('init', { id: client.userid, num: counter });
-    client.emit('message', { message: 'Welcome to Chess Roulette' });
+    client.emit('message', { message: "Welcome to Chess Roulette!" });
+    client.emit('message', { message: "Type '/help' to see list of commands." });
     server.findGame(client);
     client.on('disconnect', function() {
         if (client.game && client.game.id) {
@@ -30,7 +32,16 @@ io.sockets.on('connection', function(client) {
         }
     });
     client.on('send', function(data) {
-        io.sockets.emit('message', data);
+        switch (data.message) { 
+            case '/help':
+                client.emit('message', { message: helpMessage, clientid: client.userid });
+                break;
+            case '/newgame':
+                server.endGame(client.game.id, client.userid);
+                break;
+            default:
+                io.sockets.emit('message', data);
+        }
     });
     client.on('move', function(data) {
         io.sockets.emit('setposition', data );
@@ -59,9 +70,8 @@ server.createGame = function(player) {
 server.endGame = function(gameid, playerid) {
     var game = this.games[gameid];
     if (game) {
-        io.sockets.emit('message', { message: 'Opponent disconnected.', gameid: gameid });
-        io.sockets.emit('message', { message: 'Waiting for new opponent.', gameid: gameid });
-        io.sockets.emit('endGame', { id: gameid });http://chesspuzzleoftheday.com:3000/
+        io.sockets.emit('messgae', { message: 'Game ended', clientid: playerid });
+        io.sockets.emit('endGame', { id: gameid });
         delete this.games[gameid];
         this.numGames--;
     } else {
@@ -75,7 +85,7 @@ server.startGame = function(game) {
 
 server.findGame = function(player) {
     console.log('Looking for game.  There are ' + this.numGames + ' total games.');
-    player.emit('message', { message: 'Looking for open game' });
+    player.emit('message', { message: 'Looking for open game', clientid: player.userid });
     if (this.numGames) {
         var joined_game = false;
         for (var gameid in this.games) {
@@ -85,7 +95,7 @@ server.findGame = function(player) {
                 game.numPlayers++;
                 player.game = game;
                 player.emit('setcolor', { color: 'b' });
-                player.emit('message', { message: 'You are playing as black.' });
+                player.emit('message', { message: 'You are playing as black.', clientid: player.userid });
                 player.emit('setgameid', { gameid: game.id });
                 io.sockets.emit('message', { message: 'Opponent found!', gameid: game.id });
                 game.players.push(player);
@@ -93,11 +103,11 @@ server.findGame = function(player) {
             }
         }
         if (!joined_game) {
-            player.emit('message', { message: 'No open games found, creating new game...' });
+            player.emit('message', { message: 'No open games found, creating new game...', clientid: player.userid });
             this.createGame(player);
         }
     } else {
-        player.emit('message', { message: 'No games found, creating new game...' });
+        player.emit('message', { message: 'No games found, creating new game...', clientid: player.userid });
         this.createGame(player);
     }
 }; //findGame
